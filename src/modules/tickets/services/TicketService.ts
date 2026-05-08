@@ -1,7 +1,7 @@
 import { injectable, inject } from 'tsyringe';
-import { ITicketService } from './ITicketService';
-import { ITicketRepository } from '../repositories/ITicketRepository';
-import { ILogger } from '../../../common/utils/logger/ILogger';
+import { ITicketService } from '@/modules/tickets/services/ITicketService';
+import { ITicketRepository } from '@/modules/tickets/repositories/ITicketRepository';
+import { ILogger } from '@/common/utils/logger/ILogger';
 
 @injectable()
 export class TicketService implements ITicketService {

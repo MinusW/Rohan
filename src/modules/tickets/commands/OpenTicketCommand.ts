@@ -1,6 +1,7 @@
 import { Command } from '@sapphire/framework';
 import { container } from 'tsyringe';
-import { ITicketService } from '../services/ITicketService';
+import { ITicketService } from '@/modules/tickets/services/ITicketService';
+import { ILogger } from '@/common/utils/logger/ILogger';
 
 export class OpenTicketCommand extends Command {
     public constructor(context: Command.Context, options: Command.Options) {
@@ -28,7 +29,8 @@ export class OpenTicketCommand extends Command {
             await ticketService.createTicket(interaction.user.id);
             await interaction.editReply('Your ticket has been created successfully!');
         } catch (error) {
-            console.error(error);
+            const logger = container.resolve<ILogger>('ILogger');
+            logger.error('An error occurred while creating ticket:', error);
             await interaction.editReply('An error occurred while creating your ticket.');
         }
     }

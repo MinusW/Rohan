@@ -1,6 +1,6 @@
 import { injectable } from 'tsyringe';
-import { ITicketRepository } from './ITicketRepository';
-import { TicketModel } from '../models/TicketModel';
+import { ITicketRepository } from '@/modules/tickets/repositories/ITicketRepository';
+import { TicketModel } from '@/modules/tickets/models/TicketModel';
 
 @injectable()
 export class TicketRepository implements ITicketRepository {

@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { container } from 'tsyringe';
-import { ILogger } from '../common/utils/logger/ILogger';
+import { ILogger } from '@/common/utils/logger/ILogger';
 
 export class Database {
     public static async connect(): Promise<void> {

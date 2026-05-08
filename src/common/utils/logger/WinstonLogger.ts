@@ -1,6 +1,6 @@
 import winston from 'winston';
 import { injectable } from 'tsyringe';
-import { ILogger } from './ILogger';
+import { ILogger } from '@/common/utils/logger/ILogger';
 
 @injectable()
 export class WinstonLogger implements ILogger {
