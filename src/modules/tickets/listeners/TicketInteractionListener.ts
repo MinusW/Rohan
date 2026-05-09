@@ -1,5 +1,5 @@
 import { Listener } from '@sapphire/framework';
-import { Interaction, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, PermissionFlagsBits, MessageFlags } from 'discord.js';
+import { Interaction, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, PermissionFlagsBits, MessageFlags, EmbedBuilder } from 'discord.js';
 import { container } from 'tsyringe';
 import { ITicketService } from '@/modules/tickets/services/ITicketService';
 import { ITicketRepository } from '@/modules/tickets/repositories/ITicketRepository';
@@ -82,18 +82,16 @@ export class TicketInteractionListener extends Listener {
         // ── Claim Button (inside ticket channel) ──
         if (interaction.customId === 'ticket_claim') {
             if (!interaction.guild) return;
-            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
             if (!(await this.hasSupportPermission(interaction, configService))) {
-                return interaction.editReply({ content: 'You do not have permission to claim tickets.' });
+                return interaction.reply({ content: 'You do not have permission to claim tickets.', flags: MessageFlags.Ephemeral });
             }
 
             const success = await ticketService.claimTicket(interaction.guild, interaction.channelId, interaction.user);
             if (success) {
-                await interaction.channel?.send({ content: `Ticket has been claimed by ${interaction.user.toString()}.` });
-                return interaction.editReply({ content: 'You have successfully claimed this ticket.' });
+                return interaction.reply({ content: `✋ Ticket has been claimed by ${interaction.user.toString()}.` });
             } else {
-                return interaction.editReply({ content: 'Failed to claim. This ticket may already be claimed or is not active.' });
+                return interaction.reply({ content: 'Failed to claim ticket.', flags: MessageFlags.Ephemeral });
             }
         }
 
@@ -121,10 +119,9 @@ export class TicketInteractionListener extends Listener {
         // ── Reopen Button (after ticket is closed) ──
         if (interaction.customId === 'ticket_reopen') {
             if (!interaction.guild) return;
-            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
             if (!(await this.hasSupportPermission(interaction, configService))) {
-                return interaction.editReply({ content: 'You do not have permission to reopen tickets.' });
+                return interaction.reply({ content: 'You do not have permission to reopen tickets.', flags: MessageFlags.Ephemeral });
             }
 
             const success = await ticketService.reopenTicket(interaction.guild, interaction.channelId, interaction.user);
@@ -132,22 +129,28 @@ export class TicketInteractionListener extends Listener {
                 try {
                     await interaction.message.edit({ components: [] });
                 } catch { /* message may be ephemeral or deleted */ }
-                return interaction.editReply({ content: 'Ticket has been reopened.' });
+                
+                const reopenEmbed = new EmbedBuilder()
+                    .setTitle('🔓 Ticket Reopened')
+                    .setDescription(`This ticket has been reopened by ${interaction.user.toString()}.`)
+                    .setColor('Green')
+                    .setTimestamp();
+                    
+                return interaction.reply({ embeds: [reopenEmbed] });
             } else {
-                return interaction.editReply({ content: 'Failed to reopen. This ticket may not be closed.' });
+                return interaction.reply({ content: 'Failed to reopen ticket.', flags: MessageFlags.Ephemeral });
             }
         }
 
         // ── Delete Button (after ticket is closed) ──
         if (interaction.customId === 'ticket_delete') {
             if (!interaction.guild) return;
-            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
             if (!(await this.hasSupportPermission(interaction, configService))) {
-                return interaction.editReply({ content: 'You do not have permission to delete ticket channels.' });
+                return interaction.reply({ content: 'You do not have permission to delete ticket channels.', flags: MessageFlags.Ephemeral });
             }
 
-            await interaction.editReply({ content: 'Deleting channel...' });
+            await interaction.reply({ content: 'Deleting channel...', flags: MessageFlags.Ephemeral });
             await ticketService.deleteTicketChannel(interaction.guild, interaction.channelId);
             return;
         }
@@ -195,15 +198,13 @@ export class TicketInteractionListener extends Listener {
         if (interaction.customId === 'ticket_close_modal') {
             if (!interaction.guild) return;
 
-            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
             const summary = interaction.fields.getTextInputValue('close_summary');
             const success = await ticketService.closeTicket(interaction.guild, interaction.channelId, interaction.user, summary);
 
             if (success) {
-                return interaction.editReply({ content: 'Ticket has been closed.' });
+                return interaction.reply({ content: '🔒 Ticket has been closed.', flags: MessageFlags.Ephemeral });
             } else {
-                return interaction.editReply({ content: 'Failed to close ticket. It may already be closed or this is not a ticket channel.' });
+                return interaction.reply({ content: 'Failed to close ticket.', flags: MessageFlags.Ephemeral });
             }
         }
     }

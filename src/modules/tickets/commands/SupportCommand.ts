@@ -304,14 +304,14 @@ export class SupportCommand extends Command {
             }
 
             if (['claim', 'unclaim', 'transfer', 'close'].includes(subcommand)) {
-                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                // Remove redundant deferReply({ flags: MessageFlags.Ephemeral })
 
                 const config = await configService.getConfig(interaction.guild.id);
                 if (config.supportRoleId) {
                     const member = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
                     if (!member || !member.roles.cache.has(config.supportRoleId)) {
                         if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
-                            return interaction.editReply({ content: 'You do not have permission to manage tickets.' });
+                            return interaction.reply({ content: 'You do not have permission to manage tickets.', flags: MessageFlags.Ephemeral });
                         }
                     }
                 }
@@ -319,20 +319,18 @@ export class SupportCommand extends Command {
                 if (subcommand === 'claim') {
                     const success = await ticketService.claimTicket(interaction.guild, interaction.channelId, interaction.user);
                     if (success) {
-                        const channel = interaction.channel as TextChannel;
-                        await channel.send({ content: `Ticket has been claimed by ${interaction.user.toString()}.` });
-                        return interaction.editReply({ content: 'You have successfully claimed this ticket.' });
+                        return interaction.reply({ content: `✋ Ticket has been claimed by ${interaction.user.toString()}.` });
                     } else {
-                        return interaction.editReply({ content: 'Failed to claim ticket.' });
+                        return interaction.reply({ content: 'Failed to claim ticket.', flags: MessageFlags.Ephemeral });
                     }
                 }
 
                 if (subcommand === 'unclaim') {
                     const success = await ticketService.unclaimTicket(interaction.guild, interaction.channelId, interaction.user);
                     if (success) {
-                        return interaction.editReply({ content: 'You have successfully unclaimed this ticket.' });
+                        return interaction.reply({ content: `✋ This ticket has been unclaimed by ${interaction.user.toString()} and is now available for other staff.` });
                     } else {
-                        return interaction.editReply({ content: 'Failed to unclaim ticket. It may not be claimed.' });
+                        return interaction.reply({ content: 'Failed to unclaim ticket. It may not be claimed.', flags: MessageFlags.Ephemeral });
                     }
                 }
 
@@ -340,9 +338,9 @@ export class SupportCommand extends Command {
                     const targetUser = interaction.options.getUser('user', true);
                     const success = await ticketService.transferTicket(interaction.guild, interaction.channelId, interaction.user, targetUser);
                     if (success) {
-                        return interaction.editReply({ content: `Ticket successfully transferred to ${targetUser.tag}.` });
+                        return interaction.reply({ content: `🎫 This ticket has been transferred to ${targetUser.toString()} by ${interaction.user.toString()}.` });
                     } else {
-                        return interaction.editReply({ content: 'Failed to transfer ticket. It may not be claimed.' });
+                        return interaction.reply({ content: 'Failed to transfer ticket. It may not be claimed.', flags: MessageFlags.Ephemeral });
                     }
                 }
 
@@ -350,9 +348,9 @@ export class SupportCommand extends Command {
                     const summary = interaction.options.getString('summary', true);
                     const success = await ticketService.closeTicket(interaction.guild, interaction.channelId, interaction.user, summary);
                     if (success) {
-                        return interaction.editReply({ content: 'Ticket has been closed.' });
+                        return interaction.reply({ content: '🔒 Ticket has been closed.', flags: MessageFlags.Ephemeral });
                     } else {
-                        return interaction.editReply({ content: 'Failed to close ticket.' });
+                        return interaction.reply({ content: 'Failed to close ticket.', flags: MessageFlags.Ephemeral });
                     }
                 }
             }

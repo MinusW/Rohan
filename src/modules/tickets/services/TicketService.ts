@@ -229,11 +229,6 @@ export class TicketService implements ITicketService {
 
         await this.updateLogMessage('transferred', ticket, guild, transferrer);
 
-        const channel = guild.channels.resolve(channelId) as TextChannel | null;
-        if (channel) {
-            await channel.send({ content: `🎫 This ticket has been transferred to ${newClaimer.toString()} by ${transferrer.toString()}.` });
-        }
-
         return true;
     }
 
@@ -247,11 +242,6 @@ export class TicketService implements ITicketService {
         this.logger.info(`Ticket in channel ${channelId} unclaimed by ${unclaimer.id}`);
 
         await this.updateLogMessage('unclaimed', ticket, guild, unclaimer);
-
-        const channel = guild.channels.resolve(channelId) as TextChannel | null;
-        if (channel) {
-            await channel.send({ content: `✋ This ticket has been unclaimed by ${unclaimer.toString()} and is now available for other staff.` });
-        }
 
         return true;
     }
@@ -309,14 +299,6 @@ export class TicketService implements ITicketService {
         await this.ticketRepository.update(channelId, { status: newStatus });
 
         await this.updateLogMessage('reopened', ticket, guild, reopener);
-
-        const reopenEmbed = new EmbedBuilder()
-            .setTitle('🔓 Ticket Reopened')
-            .setDescription(`This ticket has been reopened by ${reopener.toString()}.`)
-            .setColor('Green')
-            .setTimestamp();
-
-        await channel.send({ embeds: [reopenEmbed] }).catch(() => null);
 
         this.logger.info(`Ticket in channel ${channelId} reopened by user ${reopener.id}`);
         return true;
