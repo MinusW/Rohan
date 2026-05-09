@@ -32,7 +32,7 @@ export class TicketInteractionListener extends Listener {
 
     private async hasSupportPermission(interaction: any, configService: ISupportConfigService): Promise<boolean> {
         if (!interaction.guild) return false;
-        
+
         const config = await configService.getConfig(interaction.guild.id);
         if (config.supportRoleId) {
             const member = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
@@ -89,7 +89,7 @@ export class TicketInteractionListener extends Listener {
 
             const success = await ticketService.claimTicket(interaction.guild, interaction.channelId, interaction.user);
             if (success) {
-                return interaction.reply({ content: `✋ Ticket has been claimed by ${interaction.user.toString()}.` });
+                return interaction.reply({ content: `${interaction.user.toString()} will take charge of this ticket.` });
             } else {
                 return interaction.reply({ content: 'Failed to claim ticket.', flags: MessageFlags.Ephemeral });
             }
@@ -129,13 +129,13 @@ export class TicketInteractionListener extends Listener {
                 try {
                     await interaction.message.edit({ components: [] });
                 } catch { /* message may be ephemeral or deleted */ }
-                
+
                 const reopenEmbed = new EmbedBuilder()
                     .setTitle('🔓 Ticket Reopened')
                     .setDescription(`This ticket has been reopened by ${interaction.user.toString()}.`)
                     .setColor('Green')
                     .setTimestamp();
-                    
+
                 return interaction.reply({ embeds: [reopenEmbed] });
             } else {
                 return interaction.reply({ content: 'Failed to reopen ticket.', flags: MessageFlags.Ephemeral });

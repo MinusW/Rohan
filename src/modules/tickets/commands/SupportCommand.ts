@@ -55,7 +55,7 @@ export class SupportCommand extends Command {
                             subcommand
                                 .setName('set-support-role')
                                 .setDescription('Set the role that can claim and close tickets')
-                                .addRoleOption(option => 
+                                .addRoleOption(option =>
                                     option.setName('role')
                                         .setDescription('The support role')
                                         .setRequired(true)
@@ -67,7 +67,7 @@ export class SupportCommand extends Command {
                                 .setDescription('Add a new ticket type (button)')
                                 .addStringOption(option => option.setName('name').setDescription('Name of the ticket type').setRequired(true))
                                 .addStringOption(option => option.setName('description').setDescription('Description shown when selecting').setRequired(true))
-                                .addStringOption(option => 
+                                .addStringOption(option =>
                                     option.setName('color')
                                         .setDescription('Color of the ticket embed')
                                         .setRequired(true)
@@ -319,7 +319,7 @@ export class SupportCommand extends Command {
                 if (subcommand === 'claim') {
                     const success = await ticketService.claimTicket(interaction.guild, interaction.channelId, interaction.user);
                     if (success) {
-                        return interaction.reply({ content: `✋ Ticket has been claimed by ${interaction.user.toString()}.` });
+                        return interaction.reply({ content: `${interaction.user.toString()} will take charge of this ticket.` });
                     } else {
                         return interaction.reply({ content: 'Failed to claim ticket.', flags: MessageFlags.Ephemeral });
                     }
