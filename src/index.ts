@@ -20,7 +20,7 @@ async function bootstrap() {
         // Initialize and start the bot
         const client = new BotClient();
         await client.login(process.env.DISCORD_TOKEN);
-        
+
         logger.info('Bot client logged in successfully.');
     } catch (error) {
         // Fallback to console if container is not initialized yet
