@@ -19,7 +19,7 @@ export class SupportCommand extends Command {
             builder
                 .setName(this.name)
                 .setDescription(this.description)
-                .setDefaultMemberPermissions(PermissionFlagsBits.SendMessages) // Allow everyone to see it, restrict admin commands inside execution
+                .setDefaultMemberPermissions(PermissionFlagsBits.SendMessages)
                 .addSubcommandGroup(group =>
                     group
                         .setName('config')
@@ -61,25 +61,25 @@ export class SupportCommand extends Command {
                                         .setRequired(true)
                                 )
                         )
-                                .addSubcommand(subcommand =>
-                                    subcommand
-                                        .setName('type-add')
-                                        .setDescription('Add a new ticket type (button)')
-                                        .addStringOption(option => option.setName('name').setDescription('Name of the ticket type').setRequired(true))
-                                        .addStringOption(option => option.setName('description').setDescription('Description shown when selecting').setRequired(true))
-                                        .addStringOption(option => 
-                                            option.setName('color')
-                                                .setDescription('Color of the ticket embed')
-                                                .setRequired(true)
-                                                .addChoices(
-                                                    { name: 'Blurple (Blue)', value: 'Blurple' },
-                                                    { name: 'Green (Success)', value: 'Green' },
-                                                    { name: 'Red (Danger)', value: 'Red' },
-                                                    { name: 'Grey (Secondary)', value: 'Grey' }
-                                                )
+                        .addSubcommand(subcommand =>
+                            subcommand
+                                .setName('type-add')
+                                .setDescription('Add a new ticket type (button)')
+                                .addStringOption(option => option.setName('name').setDescription('Name of the ticket type').setRequired(true))
+                                .addStringOption(option => option.setName('description').setDescription('Description shown when selecting').setRequired(true))
+                                .addStringOption(option => 
+                                    option.setName('color')
+                                        .setDescription('Color of the ticket embed')
+                                        .setRequired(true)
+                                        .addChoices(
+                                            { name: 'Blurple (Blue)', value: 'Blurple' },
+                                            { name: 'Green (Success)', value: 'Green' },
+                                            { name: 'Red (Danger)', value: 'Red' },
+                                            { name: 'Grey (Secondary)', value: 'Grey' }
                                         )
-                                        .addStringOption(option => option.setName('emoji').setDescription('Optional emoji for the button').setRequired(false))
                                 )
+                                .addStringOption(option => option.setName('emoji').setDescription('Optional emoji for the button').setRequired(false))
+                        )
                         .addSubcommand(subcommand =>
                             subcommand
                                 .setName('type-remove')
@@ -94,6 +94,17 @@ export class SupportCommand extends Command {
                 )
                 .addSubcommand(subcommand =>
                     subcommand
+                        .setName('unclaim')
+                        .setDescription('Unclaim the current ticket (Support only)')
+                )
+                .addSubcommand(subcommand =>
+                    subcommand
+                        .setName('transfer')
+                        .setDescription('Transfer the current ticket to another colleague (Support only)')
+                        .addUserOption(option => option.setName('user').setDescription('The colleague to transfer to').setRequired(true))
+                )
+                .addSubcommand(subcommand =>
+                    subcommand
                         .setName('close')
                         .setDescription('Close the current ticket (Support only)')
                         .addStringOption(option => option.setName('summary').setDescription('Resolution summary').setRequired(true))
@@ -103,7 +114,7 @@ export class SupportCommand extends Command {
                         .setName('help')
                         .setDescription('View all support commands and how the ticketing system works')
                 )
-        , { idHints: ['1502435464165199924'] });
+        );
     }
 
     public override async chatInputRun(interaction: Command.ChatInputCommandInteraction) {
@@ -151,21 +162,10 @@ export class SupportCommand extends Command {
                         '```'
                     )
                     .addFields(
-                        {
-                            name: '🟢 Created',
-                            value: 'Green log embed is posted in the log channel.',
-                            inline: true
-                        },
-                        {
-                            name: '🟡 Claimed',
-                            value: 'Log embed turns yellow with claimer info.',
-                            inline: true
-                        },
-                        {
-                            name: '🔴 Closed',
-                            value: 'Log embed turns red with resolution summary.',
-                            inline: true
-                        }
+                        { name: '🟢 Created', value: 'Green log embed posted in logs.', inline: true },
+                        { name: '🟡 Claimed', value: 'Log turns yellow with claimer info.', inline: true },
+                        { name: '🟣 Transferred', value: 'Log turns purple with transfer info.', inline: true },
+                        { name: '🔴 Closed', value: 'Log turns red with resolution summary.', inline: true }
                     )
                     .setColor(0x5865F2);
 
@@ -178,16 +178,18 @@ export class SupportCommand extends Command {
                                 '`/support config set-discord-category` — Set the category for ticket channels',
                                 '`/support config set-log-channel` — Set the channel for ticket logs',
                                 '`/support config set-support-role` — Set the role allowed to manage tickets',
-                                '`/support config type-add` — Add a ticket type button *(max 25)*',
+                                '`/support config type-add` — Add a ticket type button',
                                 '`/support config type-remove` — Remove a ticket type button',
-                                '`/support config send-panel` — Deploy the ticket panel to the current channel'
+                                '`/support config send-panel` — Deploy the ticket panel'
                             ].join('\n')
                         },
                         {
                             name: '__Support Staff__  *(Support Role)*',
                             value: [
-                                '`/support claim` — Claim the ticket in the current channel',
-                                '`/support close <summary>` — Close & log the ticket with a resolution'
+                                '`/support claim` — Claim the current ticket',
+                                '`/support unclaim` — Return ticket to unclaimed state',
+                                '`/support transfer @user` — Hand off ticket to colleague',
+                                '`/support close <summary>` — Close & log the ticket'
                             ].join('\n')
                         },
                         {
@@ -223,7 +225,7 @@ export class SupportCommand extends Command {
                 if (subcommand === 'send-panel') {
                     const config = await configService.getConfig(interaction.guild.id);
                     if (!config.ticketTypes || config.ticketTypes.length === 0) {
-                        return interaction.reply({ content: 'You have not configured any ticket types. Please use `/support config type-add` first.', flags: MessageFlags.Ephemeral });
+                        return interaction.reply({ content: 'You have not configured any ticket types.', flags: MessageFlags.Ephemeral });
                     }
 
                     const embed = new EmbedBuilder()
@@ -256,9 +258,7 @@ export class SupportCommand extends Command {
 
                         currentRow.addComponents(button);
                     }
-                    if (currentRow.components.length > 0) {
-                        rows.push(currentRow);
-                    }
+                    if (currentRow.components.length > 0) rows.push(currentRow);
 
                     if (interaction.channel && interaction.guild) {
                         const channel = interaction.channel as TextChannel;
@@ -287,18 +287,13 @@ export class SupportCommand extends Command {
                     return interaction.reply({ content: `Support role set to ${role.toString()}`, flags: MessageFlags.Ephemeral });
                 }
 
-
                 if (subcommand === 'type-add') {
-                    const config = await configService.getConfig(interaction.guild.id);
-                    if (config.ticketTypes.length >= 25 && !config.ticketTypes.find(t => t.name === interaction.options.getString('name', true))) {
-                        return interaction.reply({ content: 'You have reached the maximum limit of 25 ticket types.', flags: MessageFlags.Ephemeral });
-                    }
                     const name = interaction.options.getString('name', true);
                     const desc = interaction.options.getString('description', true);
                     const color = interaction.options.getString('color', true);
                     const emoji = interaction.options.getString('emoji') ?? undefined;
                     await configService.addTicketType(interaction.guild.id, name, desc, color, emoji, interaction.guild);
-                    return interaction.reply({ content: `Added ticket type **${name}** (${color})${emoji ? ` with emoji ${emoji}` : ''}: ${desc}. Panel updated!`, flags: MessageFlags.Ephemeral });
+                    return interaction.reply({ content: `Added ticket type **${name}**. Panel updated!`, flags: MessageFlags.Ephemeral });
                 }
 
                 if (subcommand === 'type-remove') {
@@ -308,7 +303,7 @@ export class SupportCommand extends Command {
                 }
             }
 
-            if (subcommand === 'claim' || subcommand === 'close') {
+            if (['claim', 'unclaim', 'transfer', 'close'].includes(subcommand)) {
                 await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
                 const config = await configService.getConfig(interaction.guild.id);
@@ -316,7 +311,7 @@ export class SupportCommand extends Command {
                     const member = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
                     if (!member || !member.roles.cache.has(config.supportRoleId)) {
                         if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
-                            return interaction.editReply({ content: 'You do not have permission to manage tickets. Only users with the configured support role can do this.' });
+                            return interaction.editReply({ content: 'You do not have permission to manage tickets.' });
                         }
                     }
                 }
@@ -324,34 +319,49 @@ export class SupportCommand extends Command {
                 if (subcommand === 'claim') {
                     const success = await ticketService.claimTicket(interaction.guild, interaction.channelId, interaction.user);
                     if (success) {
-                        // Send a public message to the channel so everyone sees it
                         const channel = interaction.channel as TextChannel;
                         await channel.send({ content: `Ticket has been claimed by ${interaction.user.toString()}.` });
                         return interaction.editReply({ content: 'You have successfully claimed this ticket.' });
                     } else {
-                        return interaction.editReply({ content: 'Failed to claim ticket. It might not be an active ticket or it is already claimed.' });
+                        return interaction.editReply({ content: 'Failed to claim ticket.' });
+                    }
+                }
+
+                if (subcommand === 'unclaim') {
+                    const success = await ticketService.unclaimTicket(interaction.guild, interaction.channelId, interaction.user);
+                    if (success) {
+                        return interaction.editReply({ content: 'You have successfully unclaimed this ticket.' });
+                    } else {
+                        return interaction.editReply({ content: 'Failed to unclaim ticket. It may not be claimed.' });
+                    }
+                }
+
+                if (subcommand === 'transfer') {
+                    const targetUser = interaction.options.getUser('user', true);
+                    const success = await ticketService.transferTicket(interaction.guild, interaction.channelId, interaction.user, targetUser);
+                    if (success) {
+                        return interaction.editReply({ content: `Ticket successfully transferred to ${targetUser.tag}.` });
+                    } else {
+                        return interaction.editReply({ content: 'Failed to transfer ticket. It may not be claimed.' });
                     }
                 }
 
                 if (subcommand === 'close') {
                     const summary = interaction.options.getString('summary', true);
-
                     const success = await ticketService.closeTicket(interaction.guild, interaction.channelId, interaction.user, summary);
                     if (success) {
                         return interaction.editReply({ content: 'Ticket has been closed.' });
                     } else {
-                        return interaction.editReply({ content: 'Failed to close ticket. It may already be closed or this is not a ticket channel.' });
+                        return interaction.editReply({ content: 'Failed to close ticket.' });
                     }
                 }
             }
 
         } catch (error) {
             logger.error(`Error in /support command:`, error);
-            if (interaction.deferred || interaction.replied) {
-                await interaction.followUp({ content: 'An error occurred while executing the command.', flags: MessageFlags.Ephemeral });
-            } else {
-                await interaction.reply({ content: 'An error occurred while executing the command.', flags: MessageFlags.Ephemeral });
-            }
+            const msg = 'An error occurred while executing the command.';
+            if (interaction.deferred || interaction.replied) await interaction.followUp({ content: msg, flags: MessageFlags.Ephemeral });
+            else await interaction.reply({ content: msg, flags: MessageFlags.Ephemeral });
         }
     }
 
@@ -364,11 +374,9 @@ export class SupportCommand extends Command {
             if (focusedOption.name === 'name') {
                 const configService = container.resolve<ISupportConfigService>('ISupportConfigService');
                 const config = await configService.getConfig(interaction.guildId!);
-                
                 const choices = config.ticketTypes
                     .filter(t => t.name.toLowerCase().includes(focusedOption.value.toLowerCase()))
                     .map(t => ({ name: t.name, value: t.name }));
-
                 return interaction.respond(choices.slice(0, 25));
             }
         }

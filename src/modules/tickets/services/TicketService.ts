@@ -15,7 +15,7 @@ export class TicketService implements ITicketService {
     ) { }
 
     private async updateLogMessage(
-        action: 'created' | 'claimed' | 'closed' | 'reopened' | 'deleted',
+        action: 'created' | 'claimed' | 'closed' | 'reopened' | 'deleted' | 'transferred' | 'unclaimed',
         ticket: ITicketDocument | Partial<ITicketDocument>,
         guild: Guild,
         actor?: User,
@@ -48,10 +48,13 @@ export class TicketService implements ITicketService {
             logEmbed.addFields({ name: 'Claimer', value: claimer ? `${claimer.tag} (${claimer.id})` : (ticket.claimerId || 'None'), inline: true });
         }
 
-        if (action === 'created') {
-            logEmbed.setTitle('Ticket Created').setColor('Green');
+        if (action === 'created' || action === 'unclaimed') {
+            logEmbed.setTitle(action === 'created' ? 'Ticket Created' : 'Ticket Unclaimed (Waiting)').setColor('Green');
         } else if (action === 'claimed') {
             logEmbed.setTitle('Ticket Claimed').setColor('Yellow');
+        } else if (action === 'transferred') {
+            logEmbed.setTitle('Ticket Transferred').setColor('Purple');
+            if (actor) logEmbed.addFields({ name: 'Transferred By', value: `${actor.tag} (${actor.id})`, inline: true });
         } else if (action === 'closed') {
             logEmbed.setTitle('Ticket Closed').setColor('Red');
             if (actor) logEmbed.addFields({ name: 'Closer', value: `${actor.tag} (${actor.id})`, inline: true });
@@ -212,6 +215,43 @@ export class TicketService implements ITicketService {
         this.logger.info(`Ticket in channel ${channelId} claimed by user ${claimer.id}`);
 
         await this.updateLogMessage('claimed', ticket, guild, claimer);
+
+        return true;
+    }
+
+    public async transferTicket(guild: Guild, channelId: string, transferrer: User, newClaimer: User): Promise<boolean> {
+        const ticket = await this.ticketRepository.getByChannelId(channelId);
+        if (!ticket || ticket.status !== 'claimed') return false;
+
+        ticket.claimerId = newClaimer.id;
+        await this.ticketRepository.update(channelId, { claimerId: newClaimer.id });
+        this.logger.info(`Ticket in channel ${channelId} transferred by ${transferrer.id} to ${newClaimer.id}`);
+
+        await this.updateLogMessage('transferred', ticket, guild, transferrer);
+
+        const channel = guild.channels.resolve(channelId) as TextChannel | null;
+        if (channel) {
+            await channel.send({ content: `🎫 This ticket has been transferred to ${newClaimer.toString()} by ${transferrer.toString()}.` });
+        }
+
+        return true;
+    }
+
+    public async unclaimTicket(guild: Guild, channelId: string, unclaimer: User): Promise<boolean> {
+        const ticket = await this.ticketRepository.getByChannelId(channelId);
+        if (!ticket || ticket.status !== 'claimed') return false;
+
+        ticket.claimerId = undefined;
+        ticket.status = 'open';
+        await this.ticketRepository.update(channelId, { claimerId: null, status: 'open' } as any);
+        this.logger.info(`Ticket in channel ${channelId} unclaimed by ${unclaimer.id}`);
+
+        await this.updateLogMessage('unclaimed', ticket, guild, unclaimer);
+
+        const channel = guild.channels.resolve(channelId) as TextChannel | null;
+        if (channel) {
+            await channel.send({ content: `✋ This ticket has been unclaimed by ${unclaimer.toString()} and is now available for other staff.` });
+        }
 
         return true;
     }
