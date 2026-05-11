@@ -246,9 +246,9 @@ export class TicketService implements ITicketService {
         return true;
     }
 
-    public async closeTicket(guild: Guild, channelId: string, closer: User, summary: string): Promise<boolean> {
+    public async closeTicket(guild: Guild, channelId: string, closer: User, summary: string): Promise<{ embed: EmbedBuilder, row: ActionRowBuilder<ButtonBuilder> } | null> {
         const ticket = await this.ticketRepository.getByChannelId(channelId);
-        if (!ticket || ticket.status === 'closed') return false;
+        if (!ticket || ticket.status === 'closed') return null;
 
         const resolution: IResolutionEntry = { summary, closerId: closer.id, closedAt: new Date() };
         const allResolutions = [...(ticket.resolutions || []), resolution];
@@ -261,28 +261,27 @@ export class TicketService implements ITicketService {
         const channel = guild.channels.resolve(channelId) as TextChannel | null;
         if (channel) {
             await this.setChannelAccess(channel, ticket.creatorId, false);
-
-            const closedEmbed = new EmbedBuilder()
-                .setTitle('🔒 Ticket Closed')
-                .setDescription(`This ticket has been closed by ${closer.toString()}.`)
-                .addFields(
-                    { name: 'Resolution Summary', value: summary.substring(0, 1024), inline: false },
-                    { name: 'Closed At', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: true }
-                )
-                .setColor('Red')
-                .setTimestamp();
-
-            const postCloseRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-                new ButtonBuilder().setCustomId('ticket_reopen').setLabel('Reopen Ticket').setStyle(ButtonStyle.Success).setEmoji('🔓'),
-                new ButtonBuilder().setCustomId('ticket_delete').setLabel('Delete Channel').setStyle(ButtonStyle.Danger).setEmoji('🗑️')
-            );
-
-            await channel.send({ embeds: [closedEmbed], components: [postCloseRow] }).catch(() => null);
         }
 
         await this.ticketRepository.update(channelId, { status: 'closed', resolutions: allResolutions });
         this.logger.info(`Ticket in channel ${channelId} closed by user ${closer.id}`);
-        return true;
+
+        const closedEmbed = new EmbedBuilder()
+            .setTitle('🔒 Ticket Closed')
+            .setDescription(`This ticket has been closed by ${closer.toString()}.`)
+            .addFields(
+                { name: 'Resolution Summary', value: summary.substring(0, 1024), inline: false },
+                { name: 'Closed At', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: true }
+            )
+            .setColor('Red')
+            .setTimestamp();
+
+        const postCloseRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+            new ButtonBuilder().setCustomId('ticket_reopen').setLabel('Reopen Ticket').setStyle(ButtonStyle.Success).setEmoji('🔓'),
+            new ButtonBuilder().setCustomId('ticket_delete').setLabel('Delete Channel').setStyle(ButtonStyle.Danger).setEmoji('🗑️')
+        );
+
+        return { embed: closedEmbed, row: postCloseRow };
     }
 
     public async reopenTicket(guild: Guild, channelId: string, reopener: User): Promise<boolean> {

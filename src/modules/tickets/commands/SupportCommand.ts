@@ -55,7 +55,7 @@ export class SupportCommand extends Command {
                             subcommand
                                 .setName('set-support-role')
                                 .setDescription('Set the role that can claim and close tickets')
-                                .addRoleOption(option =>
+                                .addRoleOption(option => 
                                     option.setName('role')
                                         .setDescription('The support role')
                                         .setRequired(true)
@@ -67,7 +67,7 @@ export class SupportCommand extends Command {
                                 .setDescription('Add a new ticket type (button)')
                                 .addStringOption(option => option.setName('name').setDescription('Name of the ticket type').setRequired(true))
                                 .addStringOption(option => option.setName('description').setDescription('Description shown when selecting').setRequired(true))
-                                .addStringOption(option =>
+                                .addStringOption(option => 
                                     option.setName('color')
                                         .setDescription('Color of the ticket embed')
                                         .setRequired(true)
@@ -304,8 +304,6 @@ export class SupportCommand extends Command {
             }
 
             if (['claim', 'unclaim', 'transfer', 'close'].includes(subcommand)) {
-                // Remove redundant deferReply({ flags: MessageFlags.Ephemeral })
-
                 const config = await configService.getConfig(interaction.guild.id);
                 if (config.supportRoleId) {
                     const member = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
@@ -346,9 +344,9 @@ export class SupportCommand extends Command {
 
                 if (subcommand === 'close') {
                     const summary = interaction.options.getString('summary', true);
-                    const success = await ticketService.closeTicket(interaction.guild, interaction.channelId, interaction.user, summary);
-                    if (success) {
-                        return interaction.reply({ content: '🔒 Ticket has been closed.', flags: MessageFlags.Ephemeral });
+                    const result = await ticketService.closeTicket(interaction.guild, interaction.channelId, interaction.user, summary);
+                    if (result) {
+                        return interaction.reply({ embeds: [result.embed], components: [result.row] });
                     } else {
                         return interaction.reply({ content: 'Failed to close ticket.', flags: MessageFlags.Ephemeral });
                     }

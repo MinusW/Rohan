@@ -1,5 +1,5 @@
 import { Listener } from '@sapphire/framework';
-import { Interaction, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, PermissionFlagsBits, MessageFlags, EmbedBuilder } from 'discord.js';
+import { Interaction, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, PermissionFlagsBits, MessageFlags, EmbedBuilder, ButtonBuilder } from 'discord.js';
 import { container } from 'tsyringe';
 import { ITicketService } from '@/modules/tickets/services/ITicketService';
 import { ITicketRepository } from '@/modules/tickets/repositories/ITicketRepository';
@@ -48,6 +48,7 @@ export class TicketInteractionListener extends Listener {
     private async handleButton(interaction: any, logger: ILogger) {
         const ticketService = container.resolve<ITicketService>('ITicketService');
         const configService = container.resolve<ISupportConfigService>('ISupportConfigService');
+        const ticketRepo = container.resolve<ITicketRepository>('ITicketRepository');
 
         // ── Ticket Creation Buttons (from the panel) ──
         if (interaction.customId.startsWith('ticket_create_')) {
@@ -97,6 +98,26 @@ export class TicketInteractionListener extends Listener {
 
         // ── Close Button (inside ticket channel) ──
         if (interaction.customId === 'ticket_close') {
+            if (!interaction.guild) return;
+
+            const ticket = await ticketRepo.getByChannelId(interaction.channelId);
+            if (!ticket) return;
+
+            // If creator clicks close, close immediately without summary
+            if (interaction.user.id === ticket.creatorId) {
+                const result = await ticketService.closeTicket(interaction.guild, interaction.channelId, interaction.user, 'Closed by creator');
+                if (result) {
+                    return interaction.reply({ embeds: [result.embed], components: [result.row] });
+                } else {
+                    return interaction.reply({ content: 'Failed to close ticket.', flags: MessageFlags.Ephemeral });
+                }
+            }
+
+            // Otherwise, check for staff permission and show modal
+            if (!(await this.hasSupportPermission(interaction, configService))) {
+                return interaction.reply({ content: 'You do not have permission to close tickets.', flags: MessageFlags.Ephemeral });
+            }
+
             const modal = new ModalBuilder()
                 .setCustomId('ticket_close_modal')
                 .setTitle('Close Ticket');
@@ -199,10 +220,10 @@ export class TicketInteractionListener extends Listener {
             if (!interaction.guild) return;
 
             const summary = interaction.fields.getTextInputValue('close_summary');
-            const success = await ticketService.closeTicket(interaction.guild, interaction.channelId, interaction.user, summary);
+            const result = await ticketService.closeTicket(interaction.guild, interaction.channelId, interaction.user, summary);
 
-            if (success) {
-                return interaction.reply({ content: '🔒 Ticket has been closed.', flags: MessageFlags.Ephemeral });
+            if (result) {
+                return interaction.reply({ embeds: [result.embed], components: [result.row] });
             } else {
                 return interaction.reply({ content: 'Failed to close ticket.', flags: MessageFlags.Ephemeral });
             }

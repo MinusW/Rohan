@@ -71,7 +71,16 @@ export class SupportConfigService implements ISupportConfigService {
         const rows: ActionRowBuilder<ButtonBuilder>[] = [];
         let currentRow = new ActionRowBuilder<ButtonBuilder>();
 
-        for (const type of config.ticketTypes) {
+        // Deduplicate ticket types by name (case-insensitive)
+        const seenNames = new Set<string>();
+        const uniqueTypes = config.ticketTypes.filter(type => {
+            const lowerName = type.name.toLowerCase();
+            if (seenNames.has(lowerName)) return false;
+            seenNames.add(lowerName);
+            return true;
+        });
+
+        for (const type of uniqueTypes) {
             if (currentRow.components.length === 5) {
                 rows.push(currentRow);
                 currentRow = new ActionRowBuilder<ButtonBuilder>();

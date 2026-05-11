@@ -15,5 +15,8 @@ export class BotClient extends SapphireClient {
         this.stores.get('listeners').registerPath(join(__dirname, '../modules/tickets/listeners'));
 
         this.stores.get('commands').registerPath(join(__dirname, '../modules/timezone/commands'));
+
+        this.stores.get('commands').registerPath(join(__dirname, '../modules/scrims/commands'));
+        this.stores.get('listeners').registerPath(join(__dirname, '../modules/scrims/listeners'));
     }
 }
