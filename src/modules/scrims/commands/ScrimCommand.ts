@@ -46,6 +46,11 @@ export class ScrimCommand extends Command {
                         )
                         .addSubcommand(subcommand =>
                             subcommand
+                                .setName('remove-log-channel')
+                                .setDescription('Remove the scrim log channel')
+                        )
+                        .addSubcommand(subcommand =>
+                            subcommand
                                 .setName('set-schedule-channel')
                                 .setDescription('Set the channel where scrim starts are announced')
                                 .addChannelOption(option =>
@@ -54,6 +59,11 @@ export class ScrimCommand extends Command {
                                         .setRequired(true)
                                         .addChannelTypes(ChannelType.GuildText)
                                 )
+                        )
+                        .addSubcommand(subcommand =>
+                            subcommand
+                                .setName('remove-schedule-channel')
+                                .setDescription('Remove the channel where scrim starts are announced')
                         )
                         .addSubcommand(subcommand =>
                             subcommand
@@ -130,11 +140,23 @@ export class ScrimCommand extends Command {
                     return interaction.editReply({ content: `Scrim log channel set to ${channel.toString()}` });
                 }
 
+                if (subcommand === 'remove-log-channel') {
+                    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                    await configService.removeLogChannel(interaction.guild.id);
+                    return interaction.editReply({ content: 'Scrim log channel has been removed.' });
+                }
+
                 if (subcommand === 'set-schedule-channel') {
                     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
                     const channel = interaction.options.getChannel('channel', true);
                     await configService.setScheduleChannel(interaction.guild.id, channel.id);
                     return interaction.editReply({ content: `Scrim schedule channel set to ${channel.toString()}` });
+                }
+
+                if (subcommand === 'remove-schedule-channel') {
+                    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                    await configService.removeScheduleChannel(interaction.guild.id);
+                    return interaction.editReply({ content: 'Scrim schedule channel has been removed.' });
                 }
 
                 if (subcommand === 'add-tier') {
@@ -221,6 +243,9 @@ export class ScrimCommand extends Command {
                         '`/scrim config set-channel` — Set up the current channel for scrims',
                         '`/scrim config remove-channel` — Remove current channel',
                         '`/scrim config set-log-channel` — Set the archive channel',
+                        '`/scrim config remove-log-channel` — Remove the archive channel',
+                        '`/scrim config set-schedule-channel` — Set the start announcement channel',
+                        '`/scrim config remove-schedule-channel` — Remove the start announcement channel',
                         '`/scrim config add-tier` — Add a scrim tier button',
                         '`/scrim config remove-tier` — Remove a scrim tier'
                     ].join('\n')

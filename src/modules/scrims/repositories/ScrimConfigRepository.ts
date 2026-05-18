@@ -40,11 +40,27 @@ export class ScrimConfigRepository implements IScrimConfigRepository {
         ) as Promise<IScrimConfigDocument>;
     }
 
+    public async removeLogChannel(guildId: string): Promise<IScrimConfigDocument> {
+        return ScrimConfigModel.findOneAndUpdate(
+            { guildId },
+            { $unset: { logChannelId: '' } },
+            { returnDocument: 'after' }
+        ) as Promise<IScrimConfigDocument>;
+    }
+
     public async setScheduleChannel(guildId: string, channelId: string): Promise<IScrimConfigDocument> {
         return ScrimConfigModel.findOneAndUpdate(
             { guildId },
             { $set: { scheduleChannelId: channelId } },
             { upsert: true, returnDocument: 'after' }
+        ) as Promise<IScrimConfigDocument>;
+    }
+
+    public async removeScheduleChannel(guildId: string): Promise<IScrimConfigDocument> {
+        return ScrimConfigModel.findOneAndUpdate(
+            { guildId },
+            { $unset: { scheduleChannelId: '' } },
+            { returnDocument: 'after' }
         ) as Promise<IScrimConfigDocument>;
     }
 

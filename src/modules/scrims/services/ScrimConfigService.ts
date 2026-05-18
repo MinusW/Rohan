@@ -31,9 +31,19 @@ export class ScrimConfigService implements IScrimConfigService {
         return this.configRepository.setLogChannel(guildId, channelId);
     }
 
+    public async removeLogChannel(guildId: string): Promise<IScrimConfigDocument> {
+        this.logger.info(`Removing scrim log channel for guild ${guildId}`);
+        return this.configRepository.removeLogChannel(guildId);
+    }
+
     public async setScheduleChannel(guildId: string, channelId: string): Promise<IScrimConfigDocument> {
         this.logger.info(`Setting scrim schedule channel for guild ${guildId} to ${channelId}`);
         return this.configRepository.setScheduleChannel(guildId, channelId);
+    }
+
+    public async removeScheduleChannel(guildId: string): Promise<IScrimConfigDocument> {
+        this.logger.info(`Removing scrim schedule channel for guild ${guildId}`);
+        return this.configRepository.removeScheduleChannel(guildId);
     }
 
     public async addTier(guildId: string, name: string, description: string, guild?: Guild): Promise<IScrimConfigDocument> {

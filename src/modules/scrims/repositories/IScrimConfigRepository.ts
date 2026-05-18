@@ -5,7 +5,9 @@ export interface IScrimConfigRepository {
     addScrimChannel(guildId: string, channelId: string): Promise<IScrimConfigDocument>;
     removeScrimChannel(guildId: string, channelId: string): Promise<IScrimConfigDocument>;
     setLogChannel(guildId: string, channelId: string): Promise<IScrimConfigDocument>;
+    removeLogChannel(guildId: string): Promise<IScrimConfigDocument>;
     setScheduleChannel(guildId: string, channelId: string): Promise<IScrimConfigDocument>;
+    removeScheduleChannel(guildId: string): Promise<IScrimConfigDocument>;
     addTier(guildId: string, tier: IScrimTier): Promise<IScrimConfigDocument>;
     removeTier(guildId: string, tierName: string): Promise<IScrimConfigDocument>;
     setPanelMessageId(guildId: string, channelId: string, messageId: string): Promise<IScrimConfigDocument>;
