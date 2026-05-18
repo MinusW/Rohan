@@ -1,6 +1,6 @@
 # Discord Bot Architecture Design Notes
 
-This document outlines the architecture for a general-purpose, highly modular Discord bot built with TypeScript, `@sapphire/framework` (Discord.js), `tsyringe` (Dependency Injection), and Mongoose (MongoDB). The design adheres strictly to SOLID principles, DRY methodologies, Google TypeScript Style guidelines, and robust Object-Oriented Programming (OOP) paradigms.
+This document outlines the architecture for a general-purpose, highly modular Discord bot built with TypeScript, `@sapphire/framework` (Discord.js), `tsyringe` (Dependency Injection), and databases using Mongoose (MongoDB) and SQLite. The design adheres strictly to SOLID principles, DRY methodologies, Google TypeScript Style guidelines, and robust Object-Oriented Programming (OOP) paradigms.
 
 ## 1. Technology Stack
 * **Language**: TypeScript (Strict mode enabled, adhering to Google TS Style Guide).
@@ -34,6 +34,7 @@ The bot will be structured around a multi-tier architecture to ensure separation
 │   ├── core/               # Core bot initialization and DI setup
 │   │   ├── BotClient.ts    # Extended SapphireClient
 │   │   ├── Database.ts     # MongoDB connection setup
+│   │   ├── SqliteDatabase.ts # SQLite connection setup
 │   │   └── Container.ts    # tsyringe container registration
 │   ├── common/             # Shared resources
 │   │   ├── exceptions/     # Custom error classes (e.g., DatabaseError)
@@ -114,4 +115,5 @@ export class OpenTicketCommand extends Command {
         await interaction.reply('Ticket created!');
     }
 }
+```
 ```
